@@ -1,0 +1,354 @@
+---
+title: "GGPLOT2 in R"
+author: "Yiming Zhang"
+date: "2/8/2018"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(ggrepel)
+```
+
+## Outline
+
+- Why ggplot2
+- Component of Grammar of Graphic
+- Basic Structure
+- Construct Plot Layer by Layer
+- Scales, Position, Facets and Themes
+- An Example
+
+## Why ggplot2
+
+- Grammar of graphic
+- Both quick and complex plot
+- Easy to "create" plot
+- Nice aesthetic settings
+- Great docummentation and active mailing list 
+
+Things you cannot do:
+
+- 3-dimensional graphics (rgl)
+- Interactive graphics (ggvis, plotly)
+
+## Components of Grammar of Graphic {.smaller}
+
+- **Data** that you want to visualise and a set of aesthetic mappings describing how variables in the data are mapped to aesthetic attributes.
+
+- **Layers** made up of geometric elements and statistical transformation. Geometric objects, **geoms** for short, such as points, lines, polygons, etc. Statistical transformations, **stats** for short, summarise data in many useful ways, such as, histogram and summarising a 2d relationship with a linear model.
+
+- The **scales** map values in the data space to values in an aesthetic space, whether it be colour, or size, or shape.
+
+- A **coordinate system**, coord for short, describes how data coordinates are mapped to the plane of the graphic.
+
+- A **facet** describes how to break up the data into subsets and how to display those subsets as small multiples. 
+
+- A **theme** which controls the finer points of display, like the font size and background colour. 
+
+## Data Frame
+
+- [2017 Airbnb data of New York City](http://insideairbnb.com/get-the-data.html) 
+
+- 43234 observations and 16 variables
+
+- It consists of features of each Airbnb room in NYC such as price, review per month, name of neighbourhood, name of borough, latitude and longitude
+
+- Simple cleansing
+
+```{r, include = FALSE}
+Airbnb <- read.csv(url('http://data.insideairbnb.com/united-states/ny/new-york-city/2017-10-02/visualisations/listings.csv'))
+Airbnb <- Airbnb[ which(Airbnb$price > 0 & Airbnb$price < 500), ]
+Airbnb$reviews_per_month[is.na(Airbnb$reviews_per_month)] = 0
+```
+
+## Structure of ggplot
+
+ggplot(data, aes(x = ,y = )) + layers + additional elements
+
+```{r, include = TRUE, echo = TRUE, fig.height = 4, fig.width = 7, fig.align='center'}
+ggplot(Airbnb, aes(x = reviews_per_month, y = price))
+```
+
+## Add a layer
+
+- Display the data or the statistical summaries of the data
+
+- Mainly use geom_xxx() function
+
+- An alternative way is stat_xxx() function
+
+- A plot must have at least one geom or stat function. there is no upper limit. You can add a layer to a plot using the + operator
+
+- All kinds of geom function and stat function: [ggplot2 cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf)
+
+## Geom_xxx()
+
+```{r, include = TRUE, echo = TRUE, fig.height = 4, fig.width = 7, fig.align='center', warning=FALSE}
+ggplot(Airbnb, aes(price, reviews_per_month)) +
+  geom_point(size = 0.1) +
+  facet_grid(~room_type)
+```
+
+## Aesthetic Mapping
+
+- Describe how variables are mapped to visual properties
+
+- aes()
+
+- Specifying the Aesthetics in the Plot(ggplot()) or in the Layers(geom_xxx() or stat_xxx())
+
+- Aesthetic Mapping can consists of Position (i.e., on the x and y axes), color (“outside” color), fill (“inside” color), shape (of points), linetype and size, etc.
+
+## Aesthetic Mapping
+
+```{r, include = TRUE, echo = TRUE}
+ggplot(Airbnb, aes(x = price)) +
+  geom_histogram(bins = 40, aes(color = room_type), fill = "grey") 
+```
+
+## Aesthetic Mapping
+
+```{r, include = TRUE, echo = TRUE}
+ggplot(Airbnb, aes(x = price)) +
+  geom_histogram(bins = 40, aes(fill = room_type), color = "grey") 
+```
+
+## Construct Plot Layer by Layer 
+
+```{r, include = TRUE, echo = TRUE, fig.height = 3.5, fig.width = 7}
+ggplot(Airbnb) +
+  geom_violin(aes(neighbourhood_group, price), colour = 'blue')
+```
+
+## Construct Plot Layer by Layer 
+
+```{r, include = TRUE, echo = TRUE, fig.height = 3, fig.width = 7}
+ggplot(Airbnb) +
+  geom_violin(aes(neighbourhood_group, price), colour = 'blue') +
+  geom_boxplot(aes(neighbourhood_group, price), width = 0.16, 
+               outlier.size = 0, notch = TRUE)
+```
+
+## Scales {.smaller}
+
+- Controls the mapping from data to aesthetic
+
+- Include position, color and fill, size, shape and line type
+
+```{r, results='asis', echo=FALSE, warning=FALSE}
+library(knitr)
+Scale <- c('scale_color_','scale_fill_','scale_size_','scale_shape_','scale_linetype_','scale_x_','scale_y_')
+Example <- c('scale_color_gradient','scale_fill_discrete','scale_size_manual','scale_shape_discrete','scale_linetype_manual','scale_x_continuous','scale_y_reverse')
+kable(data.frame(Scale, Example), caption = "Available Scales")
+```
+
+## Scale Modification Example
+
+```{r, include = TRUE, echo = TRUE, fig.height = 4, fig.width = 7}
+w1 <- ggplot(Airbnb) +
+  geom_bar(aes(x = neighbourhood_group, fill = room_type))
+w1
+```
+
+## Scale Modification Example
+
+```{r, include = TRUE, echo = TRUE, fig.height = 4, fig.width = 7}
+w1 + scale_x_discrete(name = 'Borough') +
+  scale_y_continuous(name = 'Number of rooms',
+                     breaks = seq(0,20000,4000)) +
+  scale_fill_grey(name = 'Room type')
+```
+
+## Theme
+
+- Control appearance of non-data elements
+
+- Titles, tick marks and labels
+
+- Legends appearance
+
+- Overall look
+
+- theme()
+
+## Facet
+
+- Facetting generates small multiples each showing a different subset of the data.
+
+- facet_grid() and facet_wrap()
+
+- facet_grid() is fundamentally 2d, being made up of two independent components.
+
+- facet_wrap() is 1d, but wrapped into 2d to save space
+
+## Facet_wrap()
+
+```{r, include = TRUE, echo = TRUE, fig.height = 4, fig.width = 7}
+ggplot(Airbnb, aes(price)) +
+  geom_histogram(bins = 40) +
+  facet_wrap(~neighbourhood_group)
+```
+
+## Facet_grid()
+
+```{r, include = TRUE, echo = TRUE,fig.height = 4, fig.width = 7}
+ggplot(Airbnb, aes(price)) +
+  geom_histogram(bins = 40) +
+  facet_grid(room_type ~ neighbourhood_group)
+```
+
+## Putting All Things Together
+
+How to construct this plot?
+
+```{r, include = TRUE, echo = FALSE}
+Airbnb_sub1 <- aggregate(Airbnb[ ,c(10,14)], list(Airbnb$neighbourhood, Airbnb$neighbourhood_group, Airbnb$room_type), mean)
+
+neighbourhood_count <- data.frame(table(Airbnb$neighbourhood, Airbnb$neighbourhood_group, Airbnb$room_type))
+neighbourhood_count <- neighbourhood_count[which(neighbourhood_count$Freq != 0), ]
+
+Airbnb_sub2 <- merge(Airbnb_sub1, neighbourhood_count, 
+      by.x =c( 'Group.1', 'Group.2', 'Group.3'), by.y = c('Var1', 'Var2', 'Var3'), all.x = TRUE)
+names(Airbnb_sub2) <- c('neighbourhood', 'neighbourhood_group', 'room_type', 'average_price', 'average_rpm', 'count') 
+
+good_neighbourhood <- subset(Airbnb_sub2, Airbnb_sub2$average_rpm >= 3)
+good_neighbourhood <- subset(good_neighbourhood, good_neighbourhood$average_price <=150)
+
+ggplot(Airbnb_sub2, aes(average_price, average_rpm)) +
+  geom_vline(aes(xintercept = 150), color = 'grey') +
+  geom_hline(aes(yintercept = 3), color = 'grey') +
+  geom_point(aes(color = neighbourhood_group, size = count), 
+             shape = 1, stroke = 1) +
+  geom_text_repel(aes(label = neighbourhood), 
+                  data = good_neighbourhood, size = 2.5, force = 8) +
+  scale_x_continuous(name = 'Average Price', breaks = seq(0, 450, 50)) +
+  scale_y_continuous(name = 'Average Reviews Per Month', breaks = c(1:8)) +
+  scale_color_discrete(name = '') +
+  scale_size_continuous(name = '') +
+  labs(title = 'Neibourhood in NYC Airbnb') +
+  theme_minimal() +
+  theme(legend.position = 'top',
+        legend.text = element_text(size = 8, color = 'gray10'),
+        plot.title = element_text(size = 15, face = 'bold', hjust = 0.5 )) +
+  facet_wrap(~room_type)
+```
+
+## Data Transformation
+
+```{r, include = TRUE, echo = TRUE}
+Airbnb_sub1 <- aggregate(Airbnb[ ,c(10,14)], 
+  list(Airbnb$neighbourhood, Airbnb$neighbourhood_group,
+       Airbnb$room_type), mean)
+neighbourhood_count <- data.frame(table(Airbnb$neighbourhood,
+                  Airbnb$neighbourhood_group, Airbnb$room_type))
+neighbourhood_count <- 
+      neighbourhood_count[which(neighbourhood_count$Freq != 0), ]
+Airbnb_sub2 <- merge(Airbnb_sub1, neighbourhood_count, 
+      by.x =c( 'Group.1', 'Group.2', 'Group.3'), 
+      by.y = c('Var1', 'Var2', 'Var3'), all.x = TRUE)
+      names(Airbnb_sub2) <- c('neighbourhood', 'neighbourhood_group',
+                'room_type', 'average_price', 'average_rpm', 'count') 
+good_neighbourhood <- 
+  subset(Airbnb_sub2, Airbnb_sub2$average_rpm >= 3)
+good_neighbourhood <- 
+  subset(good_neighbourhood, good_neighbourhood$average_price <=150)
+```
+
+## Basic Scatterplot with three facets
+
+```{r, include = TRUE, echo = TRUE,fig.height = 4, fig.width = 7}
+p <- ggplot(Airbnb_sub2, aes(average_price, average_rpm)) +
+  geom_point(aes(color = neighbourhood_group, size = count)) +
+  facet_wrap(~room_type)
+p
+```
+
+## What need we do?
+
+- Change the point shape to open circle
+
+- Add horizontal and vertical line
+
+- Add name of those 'good neighbourhoods'
+
+- Title, label axes, legend
+
+- Change theme
+
+## Change the point shape to open circle
+
+```{r, include = TRUE, echo = TRUE,fig.height = 3.5, fig.width = 7}
+p1 <- ggplot(Airbnb_sub2, aes(average_price, average_rpm)) +
+  geom_point(aes(color = neighbourhood_group, size = count),
+             shape = 1, stroke = 1) +
+  facet_wrap(~room_type)
+p1
+```
+
+## Add horizontal and vertical line
+
+```{r, include = TRUE, echo = TRUE,fig.height = 4, fig.width = 7}
+p2<- p1 +  geom_vline(aes(xintercept = 150), color = 'grey') +
+  geom_hline(aes(yintercept = 3), color = 'grey')
+p2
+```
+
+## Add names of those 'good neighbourhoods'
+
+```{r, include = TRUE, echo = TRUE,fig.height = 3.5, fig.width = 7}
+p3 <- p2 + geom_text(aes(label = neighbourhood), 
+           data = good_neighbourhood, size = 2.5)
+p3
+```
+
+## A better way to add those names
+
+```{r, include = TRUE, echo = TRUE,fig.height = 4, fig.width = 7}
+library(ggrepel)
+p3 <- p2 + geom_text_repel(aes(label = neighbourhood), 
+           data = good_neighbourhood, size = 2.5)
+p3
+```
+
+## Change theme
+
+```{r, include = TRUE, echo = TRUE}
+p4 <- p3 + theme_minimal()
+p4
+```
+
+## Title, label axes and legend
+
+```{r, include = TRUE, echo = TRUE}
+p5 <- p4 +
+  scale_x_continuous(name = 'Average Price',
+                     breaks = seq(0, 400, 100)) +
+  scale_y_continuous(name = 'Average Reviews Per Month', 
+                     breaks = c(1:8)) +
+  scale_color_discrete(name = '') +
+  scale_size_continuous(name = '') +
+  labs(title = 'Neibourhood in NYC Airbnb') +
+  theme(legend.position = 'top',
+        legend.text = element_text(size = 8, color = 'gray10'),
+    plot.title = element_text(size = 15, face = 'bold', hjust = 0.5))
+```
+
+## Title, label axes and legend
+
+```{r, include = TRUE, echo = TRUE}
+p5
+```
+
+## Additional Resource
+
+- Wickham, H. (2016). ggplot2: elegant graphics for data analysis. Springer.
+
+- [ggplot2 cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf)
+
+- [ggplot2 workshop](http://tutorials.iq.harvard.edu/R/Rgraphics/Rgraphics.html#faceting)
+
+- [Top 50 ggplot2 Visualizations](http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html)
+
+## Thank you for your audience!
